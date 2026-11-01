@@ -1,6 +1,6 @@
 # session-stats
 
-A Claude Code mod that shows a colored stats bar under the prompt box:
+A Claude Code mod that shows a colored stats bar under the prompt box (above it in the desktop app):
 
 ```
 ⏱ 11 turns 308 steps · 215 tok/s   ⛁ 40.4M tok · Cache hit 97%   ◔ 24% context   [details]
@@ -22,7 +22,7 @@ In the desktop app the icons are drawn as SVG and hovering one shows its details
 
 Set them in the plugin's config menu:
 
-- `position`: `below` (default) draws the bar in the hint line under the prompt; `above` draws it as a band above the prompt, with hover cards in a terminal.
+- `position`: `below` (default) draws the bar in the hint line under the prompt; `above` draws it as a band above the prompt, with hover cards in a terminal. The desktop app draws nothing under its prompt box, so there the bar is always above it.
 - `icons`: `auto` (default) uses SVG icons in the desktop app and Nerd Font glyphs in a terminal; `nerd` always uses Nerd Font glyphs; `unicode` uses plain symbols for terminals without a [Nerd Font](https://www.nerdfonts.com/).
 
 ## Install

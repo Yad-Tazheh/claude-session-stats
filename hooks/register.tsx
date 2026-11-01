@@ -308,13 +308,14 @@ export const register: Register = (on, options) => {
 
   on('ui.render', { component: 'AbovePrompt' }, async ($, e, next) => {
     if (e.props.hasSurvey || (await read($, isHidden)) || (await read($, stats)).steps === 0) return next(e)
-    if (position === 'above') return drawStats($, e, iconMode, 'band')
+    // The desktop app draws nothing under its prompt box: the band stands in there
+    if (position === 'above' || e.surface !== 'terminal') return drawStats($, e, iconMode, 'band')
     // Below the prompt, the band holds only the pinned details
     return (await read($, isPinned)) ? drawStats($, e, iconMode, 'lines') : next(e)
   })
 
   on('ui.render', { component: 'PromptHint' }, async ($, e, next) => {
-    if (position !== 'below' || (await read($, isHidden)) || (await read($, stats)).steps === 0) return next(e)
+    if (position !== 'below' || e.surface !== 'terminal' || (await read($, isHidden)) || (await read($, stats)).steps === 0) return next(e)
     return drawStats($, e, iconMode, 'hint', e.props.hint)
   })
 }
