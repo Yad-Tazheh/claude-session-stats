@@ -49,12 +49,14 @@ async function refreshContext($: EngineInterface) {
 
 export const register: Register = on => {
   on('session.start', async ($, e, next) => {
-    await $.command.register({ name: 'statsbar', description: 'Show or hide the session stats band' })
+    await $.command.register({ name: 'statsbar', description: 'Show or hide the session stats band', argumentHint: '[show|hide]' })
     return next(e)
   })
 
   on('command.run', { command: 'statsbar' }, async ($, e) => {
-    const hidden = await update($, isHidden, v => !v)
+    const arg = e.args.trim().toLowerCase()
+    const want = ['show', 'on'].includes(arg) ? false : ['hide', 'off'].includes(arg) ? true : undefined
+    const hidden = await update($, isHidden, v => want ?? !v)
     return { text: hidden ? 'Stats band hidden.' : 'Stats band shown.' }
   })
 

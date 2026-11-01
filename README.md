@@ -16,7 +16,7 @@ Hover a stat to see its details on the line below, or press **details** to pin a
 - tokens: uncached input, cache writes, cached input, output
 - context: tokens used / window, and the largest categories (system prompt, tools, messages, ...)
 
-`/statsbar` hides or shows the bar.
+`/statsbar show` or `/statsbar hide` sets the bar; `/statsbar` alone toggles it.
 
 ## Install
 
