@@ -121,33 +121,65 @@ export const register: Register = on => {
     const ttft = s.ttftCount ? (s.ttftMs / s.ttftCount / 1000).toFixed(1) : '-'
     const hitColor = cacheHit >= 80 ? 'green' : cacheHit >= 50 ? 'yellow' : 'red'
     const ctxColor = !c || c.percent < 50 ? 'green' : c.percent < 80 ? 'yellow' : 'red'
+    const ctxIcon = ctxColor === 'green' ? '🟢' : ctxColor === 'yellow' ? '🟡' : '🔴'
 
     // A segment is [text, color]; no color draws it dim
     type Seg = [string, string?]
     type Group = { key: string; accent: string; label: Seg[]; detail: Seg[] }
     const SEP: Seg = [' · ']
 
+    // Cells the band may use; 0 where no surface has measured
+    const avail = e.props.bodyColumns || e.viewport?.columns || 0
+    // An emoji takes two cells; its variation selector none
+    const cells = (t: string) =>
+      [...t].reduce((n, ch) => {
+        const cp = ch.codePointAt(0) ?? 0
+        return n + (cp === 0xfe0f ? 0 : cp >= 0x1f000 || (cp >= 0x2300 && cp <= 0x23ff) || (cp >= 0x2600 && cp <= 0x27bf) ? 2 : 1)
+      }, 0)
+    const width = (segs: Seg[]) => segs.reduce((n, [t]) => n + cells(t), 0)
+    const GAP = 3
+    const BUTTON = 11
+
+    type Labels = { time: Seg[]; tok: Seg[]; ctx: Seg[] }
+    const fullLabels: Labels = {
+      time: [['💬 '], [`${s.turns}`, 'white'], [' turns  '], ['🔁 '], [`${s.steps}`, 'white'], [' steps  '], ['⚡ '], [`${tps}`, 'cyan'], [' tok/s']],
+      tok: [['🧮 '], [fmtTok(tokens), 'white'], [' tok  '], ['💾 '], ['Cache hit '], [`${cacheHit}%`, hitColor]],
+      ctx: c ? [[`${ctxIcon} `], [`${c.percent}%`, ctxColor], [' context']] : [],
+    }
+    // Short labels for a narrow band; the hover cards keep every number
+    const shortLabels: Labels = {
+      time: [['🔁 '], [`${s.steps}`, 'white'], [' '], ['⚡ '], [`${tps}`, 'cyan'], [' t/s']],
+      tok: [['🧮 '], [fmtTok(tokens), 'white'], [' '], ['💾 '], [`${cacheHit}%`, hitColor]],
+      ctx: c ? [[`${ctxIcon} `], [`${c.percent}%`, ctxColor], [' ctx']] : [],
+    }
+    const fullWidth = Object.values(fullLabels).reduce((n, l) => n + (l.length ? width(l) + GAP : 0), BUTTON)
+    const labels = avail && fullWidth > avail ? shortLabels : fullLabels
+
     const groups: Group[] = [
       {
         key: 'time',
         accent: 'blue',
-        label: [['⏱ ', 'blue'], [`${s.turns}`, 'white'], [' turns '], [`${s.steps}`, 'white'], [' steps'], SEP, [`${tps}`, 'cyan'], [' tok/s']],
+        label: labels.time,
         detail: [
-          ['LLM time '], [fmtDur(s.llmMs), 'blue'], SEP,
-          ['Tool time '], [fmtDur(s.toolMs), 'magenta'], SEP,
-          ['Avg TTFT '], [`${ttft}s`, 'yellow'], SEP,
-          [`${tps}`, 'cyan'], [' tok/s'],
+          ['💬 Turns '], [`${s.turns}`, 'white'], SEP,
+          ['🔁 Steps '], [`${s.steps}`, 'white'], SEP,
+          ['🤖 LLM '], [fmtDur(s.llmMs), 'blue'], SEP,
+          ['🔧 Tools '], [fmtDur(s.toolMs), 'magenta'], SEP,
+          ['⏳ TTFT '], [`${ttft}s`, 'yellow'], SEP,
+          ['⚡ '], [`${tps}`, 'cyan'], [' tok/s'],
         ],
       },
       {
         key: 'tok',
         accent: 'magenta',
-        label: [['⛁ ', 'magenta'], [fmtTok(tokens), 'white'], [' tok'], SEP, ['Cache hit '], [`${cacheHit}%`, hitColor]],
+        label: labels.tok,
         detail: [
-          ['Uncached in '], [fmtTok(s.input), 'yellow'], SEP,
-          ['Cache write '], [fmtTok(s.cacheWrite), 'magenta'], SEP,
-          ['Cached in '], [fmtTok(s.cacheRead), 'green'], SEP,
-          ['Output '], [fmtTok(s.output), 'cyan'],
+          ['🧮 Total '], [fmtTok(tokens), 'white'], SEP,
+          ['💾 Cache hit '], [`${cacheHit}%`, hitColor], SEP,
+          ['📥 Uncached '], [fmtTok(s.input), 'yellow'], SEP,
+          ['📝 Cache write '], [fmtTok(s.cacheWrite), 'magenta'], SEP,
+          ['📦 Cached '], [fmtTok(s.cacheRead), 'green'], SEP,
+          ['📤 Output '], [fmtTok(s.output), 'cyan'],
         ],
       },
       ...(c
@@ -155,9 +187,9 @@ export const register: Register = on => {
             {
               key: 'ctx',
               accent: ctxColor,
-              label: [['◔ ', ctxColor], [`${c.percent}%`, ctxColor], [' context']] as Seg[],
+              label: labels.ctx,
               detail: [
-                [fmtTok(c.tokens), ctxColor], [` / ${fmtTok(c.window)}`],
+                [`${ctxIcon} `], [fmtTok(c.tokens), ctxColor], [` / ${fmtTok(c.window)}`],
                 ...c.rows.flatMap((r, i): Seg[] => [SEP, [`${r.name} `], [fmtTok(r.tokens), ['blue', 'magenta', 'cyan', 'yellow'][i]]]),
               ] as Seg[],
             },
@@ -177,33 +209,62 @@ export const register: Register = on => {
           </Text>
         ),
       )
-    const width = (segs: Seg[]) => segs.reduce((n, [t]) => n + t.length, 0)
+    // Pack whole groups into rows that fit, the button riding on the last
+    let row: Group[] = []
+    const rows = [row]
+    let used = 0
+    for (const g of groups) {
+      const w = width(g.label) + GAP
+      if (avail && used && used + w > avail) {
+        row = []
+        rows.push(row)
+        used = 0
+      }
+      row.push(g)
+      used += w
+    }
+    const lastRowFits = !avail || used + BUTTON <= avail
+    const terminal = e.surface === 'terminal'
 
-    const GAP = 3
-    let col = 0
+    const pin = (
+      <Button
+        key="pin"
+        label={pinned ? 'less' : 'details'}
+        onPress={() => update($, isPinned, v => !v)}
+      />
+    )
 
     return (
       <Box flexDirection="column">
-        <Box flexDirection="row">
-          {groups.map(g => {
-            const left = -col
-            col += width(g.label) + GAP
-            // The hover card is a child of the keyed Box, painted on the row below
-            return (
-              <Box key={g.key} marginRight={GAP}>
-                <Text hover={{ bold: true }}>{draw(g.label)}</Text>
-                <Box position="absolute" top={1} left={left} display="none" hover={{ display: 'flex' }}>
-                  <Text>{draw(g.detail)}</Text>
-                </Box>
-              </Box>
-            )
-          })}
-          <Button
-            key="pin"
-            label={pinned ? 'less' : 'details'}
-            onPress={() => update($, isPinned, v => !v)}
-          />
-        </Box>
+        {rows.map((row, r) => {
+          let col = 0
+          return (
+            <Box key={`row${r}`} flexDirection="row" flexWrap="wrap">
+              {row.map(g => {
+                const left = -col
+                col += width(g.label) + GAP
+                // The hover card is a child of the keyed Box: the desktop floats it
+                // under the group; the terminal paints it into the spare row below all
+                return (
+                  <Box key={g.key} marginRight={GAP} flexShrink={0}>
+                    <Text hover={{ bold: true }}>{draw(g.label)}</Text>
+                    <Box
+                      position="absolute"
+                      top={terminal ? rows.length - r + (lastRowFits ? 0 : 1) : 1}
+                      left={left}
+                      display="none"
+                      hover={{ display: 'flex' }}
+                    >
+                      <Text>{draw(g.detail)}</Text>
+                    </Box>
+                  </Box>
+                )
+              })}
+              {r === rows.length - 1 && lastRowFits ? pin : null}
+            </Box>
+          )
+        })}
+        {lastRowFits ? null : <Box key="pinrow">{pin}</Box>}
         {pinned ? (
           <Box flexDirection="column">
             {groups.map(g => (
