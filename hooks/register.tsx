@@ -50,6 +50,8 @@ async function refreshContext($: EngineInterface) {
 export const register: Register = on => {
   on('session.start', async ($, e, next) => {
     await $.command.register({ name: 'statsbar', description: 'Show or hide the session stats band', argumentHint: '[show|hide]' })
+    // A context reading lets the band draw before the first model request
+    await refreshContext($).catch(() => {})
     $.ui.invalidate('ui.render')
     return next(e)
   })
@@ -58,6 +60,7 @@ export const register: Register = on => {
     const arg = e.args.trim().toLowerCase()
     const want = ['show', 'on'].includes(arg) ? false : ['hide', 'off'].includes(arg) ? true : undefined
     const hidden = await update($, isHidden, v => want ?? !v)
+    if (!hidden) await refreshContext($).catch(() => {})
     // An unchanged value draws nothing new; redraw anyway so `show` always shows
     $.ui.invalidate('ui.render')
     return { text: hidden ? 'Stats band hidden.' : 'Stats band shown.' }
@@ -108,9 +111,9 @@ export const register: Register = on => {
 
   on('ui.render', { component: 'AbovePrompt' }, async ($, e, next) => {
     const s = await read($, stats)
-    if (e.props.hasSurvey || s.steps === 0 || (await read($, isHidden))) return next(e)
-
+    if (e.props.hasSurvey || (await read($, isHidden))) return next(e)
     const c = await read($, context)
+    if (s.steps === 0 && !c) return next(e)
     const pinned = await read($, isPinned)
     const { Box, Button, Text } = $.ui.resolve(e)
 

@@ -1,1 +1,1 @@
-{ "name": "session-stats", "version": "0.4.0", "description": "Stats band above the prompt: turns, steps, tok/s, tokens, cache hit, context used, with hover details", "types": "./types/index.d.ts" }
+{ "name": "session-stats", "version": "0.4.1", "description": "Stats band above the prompt: turns, steps, tok/s, tokens, cache hit, context used, with hover details", "types": "./types/index.d.ts" }
