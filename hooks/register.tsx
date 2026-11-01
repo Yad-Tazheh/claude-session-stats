@@ -50,6 +50,7 @@ async function refreshContext($: EngineInterface) {
 export const register: Register = on => {
   on('session.start', async ($, e, next) => {
     await $.command.register({ name: 'statsbar', description: 'Show or hide the session stats band', argumentHint: '[show|hide]' })
+    $.ui.invalidate('ui.render')
     return next(e)
   })
 
@@ -57,6 +58,8 @@ export const register: Register = on => {
     const arg = e.args.trim().toLowerCase()
     const want = ['show', 'on'].includes(arg) ? false : ['hide', 'off'].includes(arg) ? true : undefined
     const hidden = await update($, isHidden, v => want ?? !v)
+    // An unchanged value draws nothing new; redraw anyway so `show` always shows
+    $.ui.invalidate('ui.render')
     return { text: hidden ? 'Stats band hidden.' : 'Stats band shown.' }
   })
 
@@ -210,9 +213,10 @@ export const register: Register = on => {
               </Text>
             ))}
           </Box>
-        ) : (
+        ) : e.surface === 'terminal' ? (
+          // The terminal paints the hover card into this row; the desktop floats it
           <Text dimColor> </Text>
-        )}
+        ) : null}
       </Box>
     )
   })
