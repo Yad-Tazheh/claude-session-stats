@@ -10,7 +10,7 @@ A Claude Code mod that shows a colored stats bar under the prompt box (above it 
 - **⛁ tokens**: every token the session spent and the prompt-cache hit rate (green 80%+, yellow 50%+, red below).
 - **◔ context**: how full the context window is (green under 50%, yellow under 80%, red above).
 
-In the desktop app the icons are drawn as SVG and hovering one shows its details as a tooltip; in a terminal they are Nerd Font glyphs (the context icon is a pie slice that fills with the window). Press **details** to pin all three detail lines above the prompt:
+In the desktop app the icons are drawn as SVG and hovering a stat opens its detail line under the bar; in a terminal they are Nerd Font glyphs (the context icon is a pie slice that fills with the window). Press **details** to pin all three detail lines above the prompt:
 
 - time: LLM time, tool time, average time to first token, tok/s
 - tokens: uncached input, cache writes, cached input, output

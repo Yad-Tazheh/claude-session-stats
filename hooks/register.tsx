@@ -139,7 +139,8 @@ async function drawStats($: EngineInterface, e: RenderInput, iconMode: IconMode,
       accent: 'blue',
       label: [
         [`${s.turns}`, 'white'], [' turns '], [`${s.steps}`, 'white'], [' steps'], SEP,
-        [`${glyphs.speed} ${tps}`, 'cyan'], [' tok/s'],
+        // Only the icon slots get SVGs; a desktop font has no Nerd glyph inline
+        [mode === 'svg' ? `${tps}` : `${glyphs.speed} ${tps}`, 'cyan'], [' tok/s'],
       ],
       detail: [
         ['LLM time '], [fmtDur(s.llmMs), 'blue'], SEP,
@@ -153,7 +154,11 @@ async function drawStats($: EngineInterface, e: RenderInput, iconMode: IconMode,
       kind: 'tokens',
       icon: glyphs.tokens,
       accent: 'magenta',
-      label: [[fmtTok(tokens), 'white'], [' tok'], SEP, [`${glyphs.cache} `, hitColor], ['Cache hit '], [`${cacheHit}%`, hitColor]],
+      label: [
+        [fmtTok(tokens), 'white'], [' tok'], SEP,
+        ...(mode === 'svg' ? [] : [[`${glyphs.cache} `, hitColor] as Seg]),
+        ['Cache hit '], [`${cacheHit}%`, hitColor],
+      ],
       detail: [
         ['Uncached in '], [fmtTok(s.input), 'yellow'], SEP,
         ['Cache write '], [fmtTok(s.cacheWrite), 'magenta'], SEP,
@@ -198,16 +203,29 @@ async function drawStats($: EngineInterface, e: RenderInput, iconMode: IconMode,
       <Text color={g.accent}>{g.icon} </Text>
     )
 
+  const detailLine = (g: Group) =>
+    mode === 'svg' ? (
+      <Box flexDirection="row" gap={1}>
+        <Svg source={svgIcon(g.kind, g.accent, '', pct)} alt={g.key} width={14} height={14} />
+        <Text>{draw(g.detail)}</Text>
+      </Box>
+    ) : (
+      <Text>
+        <Text color={g.accent}>{g.icon} </Text>
+        {draw(g.detail)}
+      </Text>
+    )
+
   const lines = (
     <Box flexDirection="column">
       {groups.map(g => (
-        <Text key={g.key}>
-          <Text color={g.accent}>{mode === 'svg' ? '│' : g.icon} </Text>
-          {draw(g.detail)}
-        </Text>
+        <Box key={g.key}>{detailLine(g)}</Box>
       ))}
     </Box>
   )
+  // Cell offsets only mean something on the terminal; elsewhere a hover
+  // reveals the stat's detail row in the flow, by its scope
+  const isTerminal = e.surface === 'terminal'
   if (site === 'lines') return lines
 
   const GAP = 3
@@ -223,10 +241,16 @@ async function drawStats($: EngineInterface, e: RenderInput, iconMode: IconMode,
         const left = -col
         col += width(g.label) + 2 + GAP
         return (
-          <Box key={g.key} marginRight={GAP} flexDirection="row" gap={mode === 'svg' ? 1 : 0}>
+          <Box
+            key={g.key}
+            marginRight={GAP}
+            flexDirection="row"
+            gap={mode === 'svg' ? 1 : 0}
+            {...(isTerminal ? {} : { hover: { scope: `stat-${g.key}` } })}
+          >
             {icon(g)}
             <Text hover={{ bold: true }}>{draw(g.label)}</Text>
-            {site === 'band' && mode !== 'svg' ? (
+            {site === 'band' && isTerminal ? (
               <Box position="absolute" top={1} left={left} display="none" hover={{ display: 'flex' }}>
                 <Text>{draw(g.detail)}</Text>
               </Box>
@@ -242,7 +266,15 @@ async function drawStats($: EngineInterface, e: RenderInput, iconMode: IconMode,
   return (
     <Box flexDirection="column">
       {row}
-      {pinned ? lines : <Text dimColor> </Text>}
+      {pinned
+        ? lines
+        : isTerminal
+          ? <Text dimColor> </Text>
+          : groups.map(g => (
+              <Box key={`reveal-${g.key}`} display="none" hover={{ scope: `stat-${g.key}`, display: 'flex' }}>
+                {detailLine(g)}
+              </Box>
+            ))}
     </Box>
   )
 }

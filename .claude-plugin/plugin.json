@@ -1,6 +1,6 @@
 {
   "name": "session-stats",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "Stats bar under the prompt: turns, steps, tok/s, tokens, cache hit, context used, with Nerd Font or SVG icons and hover details",
   "types": "./types/index.d.ts",
   "userConfig": {
