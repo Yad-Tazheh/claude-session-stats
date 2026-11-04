@@ -253,7 +253,7 @@ export const register: Register = on => {
         : []),
       {
         key: 'io',
-        label: [['↑', IN_COLOR], [fmtTok(promptIn), IN_COLOR], [' ↓'], [fmtTok(s.output), OUT_COLOR]],
+        label: [['↑', IN_COLOR], [fmtTok(promptIn), IN_COLOR], [' ↓', OUT_COLOR], [fmtTok(s.output), OUT_COLOR]],
         detail: [
           ['Total '], [fmtTok(tokens), 'white'], SEP,
           [`${tps}`, 'cyan'], [' tok/s'],
