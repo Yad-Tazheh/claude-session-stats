@@ -349,8 +349,8 @@ export const register: Register = on => {
       </Box>
     ) : null
 
-    // A one-glyph Button, a sharp arrow, pointing back while open: a press opens or closes the report
-    const dot = pinned ? '❮' : '❯'
+    // A one-glyph Button, a sharp arrow, pointing down while open: a press opens or closes the report
+    const dot = pinned ? '▼' : '▶'
 
     return (
       <Box flexDirection="column" backgroundColor={BAND_BG} paddingX={1}>
