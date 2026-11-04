@@ -1,22 +1,25 @@
 # session-stats
 
-A Claude Code mod that shows a colored stats bar above the prompt:
+A Claude Code mod that shows a one-row stats bar above the prompt, on a soft dark background with a Noctalia-style palette:
 
 ```
-💬 11 turns  🔁 308 steps  ⚡ 215 tok/s   🧮 40.4M tok  💾 Cache hit 97%   🟢 24% context   [details]
+✻  ◉ live  22/97  ⣀⣤⣶⣷⣦⣤⣶⣄   │ ⚡ 98% ▰▰▰▰▰ │ ◔ 16% ▰▱▱▱▱ │ ↑14.4M ↓63.5k │ ⏱ 12m54s
 ```
 
-- **💬 🔁 ⚡ time**: your turns, model requests (steps, subagents included) and output tokens per second.
-- **🧮 💾 tokens**: every token the session spent and the prompt-cache hit rate (green 80%+, yellow 50%+, red below).
-- **🟢 context**: how full the context window is (🟢 under 50%, 🟡 under 80%, 🔴 above).
+- **✻** opens or closes the full session report.
+- **◉ live / ○ standby**: whether the model is working right now (live is yellow).
+- **22/97**: your turns / model requests (steps, subagents included).
+- **⣀⣤⣶ pulse**: output tok/s of the latest steps, as a braille sparkline.
+- **⚡ cache hit** and **◔ context used**: with gauges while live, percents alone on standby.
+- **↑ in / ↓ out** tokens, and **⏱** active time (LLM + tools).
 
-Hover a stat to see its details on the line below, or press **details** to pin all three:
+Hover a stat for a one-line detail popup. The report shows three columns:
 
-- time: LLM time, tool time, average time to first token, tok/s
-- tokens: uncached input, cache writes, cached input, output
-- context: tokens used / window, and the largest categories (system prompt, tools, messages, ...)
+- **ACTIVITY**: turns/steps, output tok/s, time to first token, LLM/tool time, pulse
+- **TOKENS**: cache-hit gauge, in, out, cached, cache write / uncached
+- **CONTEXT**: context gauge and the largest categories (messages, tools, system prompt, ...)
 
-On a narrow panel the bar shortens its labels, then moves whole stats to the next line, so nothing is cut off.
+On a narrow panel the gauges and the long pulse go first, so nothing is cut off.
 
 `/statsbar show` or `/statsbar hide` sets the bar; `/statsbar` alone toggles it.
 

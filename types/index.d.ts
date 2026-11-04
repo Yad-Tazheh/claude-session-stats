@@ -22,6 +22,6 @@ export type Context = {
 
 declare module 'claude-code' {
   interface PluginState {
-    'session-stats': { stats: Stats; context: Context | null; isHidden: boolean; isPinned: boolean }
+    'session-stats': { stats: Stats; context: Context | null; isHidden: boolean; isPinned: boolean; isBusy: boolean; spark: number[] }
   }
 }
