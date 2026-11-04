@@ -41,6 +41,8 @@ const BAND_BG = '#22222c'
 const CARD_BG = '#15151d'
 // The prompt-in count, in the bar and the report
 const IN_COLOR = '#FF00FF'
+// The report button: a toned-down purple
+const DOT_COLOR = '#9580D6'
 // The output count; and a peach for write/new and the fourth context row
 const OUT_COLOR = '#03EFFC'
 const ACCENT_ORANGE = '#FFB38A'
@@ -347,15 +349,18 @@ export const register: Register = on => {
       </Box>
     ) : null
 
-    // A one-glyph Button, a Claude-style spark: a press opens or closes the report
-    const dot = '✻'
+    // A one-glyph Button, a sharp arrow, pointing back while open: a press opens or closes the report
+    const dot = pinned ? '❮' : '❯'
 
     return (
       <Box flexDirection="column" backgroundColor={BAND_BG} paddingX={1}>
         <Box key="bar" flexDirection="row" flexWrap="wrap">
           <Box key="open" flexGrow={1} flexDirection="row">
             <Box key="dot" flexShrink={0}>
-              <Button key="dot" plain label={dot} hover={{ bold: true }} onPress={() => update($, isPinned, v => !v)} />
+              {/* No label: the colored child is what the button draws */}
+              <Button key="dot" plain hover={{ bold: true }} onPress={() => update($, isPinned, v => !v)}>
+                <Text color={DOT_COLOR}>{dot}</Text>
+              </Button>
             </Box>
             <Text>{draw(left)}</Text>
             <Text>{' '.repeat(fill)}</Text>
