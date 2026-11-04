@@ -3,14 +3,14 @@
 A Claude Code mod that shows a one-row stats bar above the prompt, on a soft dark background with a Noctalia-style palette:
 
 ```
-▶  ◉ live  22/97  ⣀⣤⣶⣷⣦⣤⣶⣄   │ ⚡ 98% ▰▰▰▰▰ │ ◔ 16% ▰▱▱▱▱ │ ↑14.4M ↓63.5k │ ⏱ 12m54s
+▶  ◉ live  22/97  ⣀⣤⣶⣷⣦⣤⣶⣄   │ ⧉ 98% ▰▰▰▰▰ │ ◔ 16% ▰▱▱▱▱ │ ↑14.4M ↓63.5k │ ⏱ 12m54s
 ```
 
 - **▶** (purple) opens the full session report; it turns to **▼** while open.
 - **◉ live / ○ standby**: whether the model is working right now (live is yellow).
 - **22/97**: your turns / model requests (steps, subagents included).
 - **⣀⣤⣶ pulse**: output tok/s of the latest steps, as a braille sparkline.
-- **⚡ cache hit** and **◔ context used**: with gauges while live, percents alone on standby.
+- **⧉ cache hit** and **◔ context used**: with gauges while live, percents alone on standby.
 - **↑ in / ↓ out** tokens, and **⏱** active time (LLM + tools).
 
 Hover a stat for a one-line detail popup. The report shows three columns:

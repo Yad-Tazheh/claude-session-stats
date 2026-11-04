@@ -229,8 +229,8 @@ export const register: Register = on => {
       {
         key: 'hit',
         label: wide
-          ? [['⚡ '], [`${cacheHit}% `, hitColor], [meter(cacheHit, 5), hitColor]]
-          : [['⚡'], [`${cacheHit}%`, hitColor]],
+          ? [['⧉ '], [`${cacheHit}% `, hitColor], [meter(cacheHit, 5), hitColor]]
+          : [['⧉'], [`${cacheHit}%`, hitColor]],
         detail: [
           ['Cached '], [fmtTok(s.cacheRead), 'green'], SEP,
           ['Written '], [fmtTok(s.cacheWrite), ACCENT_ORANGE], SEP,
