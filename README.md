@@ -10,7 +10,7 @@ A Claude Code mod that shows a one-row stats bar above the prompt, on a soft dar
 - **◉ live / ○ standby**: whether the model is working right now (live is yellow).
 - **22/97**: your turns / model requests (steps, subagents included).
 - **⣀⣤⣶ pulse**: output tok/s of the latest steps, as a braille sparkline.
-- **⧉ cache hit** and **◔ context used**: with gauges while live, percents alone on standby.
+- **⧉ cache hit** and **◔ context used**: colored with gauges while live, gray percents alone on standby.
 - **↑ in / ↓ out** tokens, and **⏱** active time (LLM + tools).
 
 Hover a stat for a one-line detail popup. The report shows three columns:

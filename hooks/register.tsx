@@ -236,8 +236,8 @@ export const register: Register = on => {
       {
         key: 'hit',
         label: wide
-          ? [['⧉ '], [`${cacheHit}% `, hitColor], [meter(cacheHit, 5), hitColor]]
-          : [['⧉'], [`${cacheHit}%`, hitColor]],
+          ? [['⧉ ', busy ? hitColor : undefined], [`${cacheHit}% `, busy ? hitColor : undefined], [meter(cacheHit, 5), busy ? hitColor : undefined]]
+          : [['⧉', busy ? hitColor : undefined], [`${cacheHit}%`, busy ? hitColor : undefined]],
         detail: [
           ['Cached '], [fmtTok(s.cacheRead), 'green'], SEP,
           ['Written '], [fmtTok(s.cacheWrite), ACCENT_ORANGE], SEP,
@@ -249,8 +249,8 @@ export const register: Register = on => {
             {
               key: 'ctx',
               label: (wide
-                ? [['◔ '], [`${c.percent}% `, ctxColor], [meter(c.percent, 5), ctxColor]]
-                : [['◔'], [`${c.percent}%`, ctxColor]]) as Seg[],
+                ? [['◔ ', busy ? ctxColor : undefined], [`${c.percent}% `, busy ? ctxColor : undefined], [meter(c.percent, 5), busy ? ctxColor : undefined]]
+                : [['◔', busy ? ctxColor : undefined], [`${c.percent}%`, busy ? ctxColor : undefined]]) as Seg[],
               detail: [
                 [fmtTok(c.tokens), ctxColor], [` / ${fmtTok(c.window)}`],
                 ...c.rows.slice(0, 1).flatMap((r): Seg[] => [SEP, [`${r.name} `], [fmtTok(r.tokens), 'blue']]),
