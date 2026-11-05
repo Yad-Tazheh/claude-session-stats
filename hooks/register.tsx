@@ -63,6 +63,9 @@ const meter = (pct: number, n: number) => {
   return '▰'.repeat(on) + '▱'.repeat(n - on)
 }
 
+// The pulse before it has data: a dim flat line
+const FLAT_COLOR = '#5a5a72'
+
 // A braille sparkline scaled to its own peak: dots fill as the rate climbs
 const sparkline = (xs: number[]) => {
   const bars = '⡀⣀⣄⣤⣦⣶⣷⣿'
@@ -221,8 +224,12 @@ export const register: Register = on => {
       [`${s.turns}`, 'white'],
       ['/'],
       [`${s.steps}`, 'white'],
-      // The pulse stays in both forms: the last 12 steps, or 6 when narrow
-      ...(pulse.length > 1 ? ([['  '], [sparkline(pulse.slice(wide ? -12 : -6)), 'yellow']] as Seg[]) : []),
+      // The pulse stays in both forms: the last 12 steps, or 6 when narrow;
+      // a dim flat line holds its place until two steps have run
+      ['  '],
+      pulse.length > 1
+        ? [sparkline(pulse.slice(wide ? -12 : -6)), 'yellow']
+        : ['⡀'.repeat(wide ? 12 : 6), FLAT_COLOR],
     ]
 
     const right = (wide: boolean): Group[] => [
@@ -323,7 +330,7 @@ export const register: Register = on => {
           ['Output', `${tps} tok/s`, 'cyan'],
           ['TTFT', `${ttft}s`, 'yellow'],
           ['LLM/tools', `${fmtDur(s.llmMs)}/${fmtDur(s.toolMs)}`, 'blue'],
-          ...(pulse.length > 1 ? ([['Pulse', sparkline(pulse.slice(-10)), 'yellow']] as Row[]) : []),
+          pulse.length > 1 ? ['Pulse', sparkline(pulse.slice(-10)), 'yellow'] : ['Pulse', '⡀'.repeat(10), FLAT_COLOR],
         ])}
         {section(
           'tok',
