@@ -173,6 +173,20 @@ export const register: Register = on => {
     if (s.steps === 0 && !c) return next(e)
     const pinned = await read($, isPinned)
     const busy = await read($, isBusy)
+    // The terminal gets solid blocks: braille and thin bars read as loose dots there
+    const terminal = e.surface === 'terminal'
+    const gauge = (pct: number, n: number) => {
+      if (!terminal) return meter(pct, n)
+      const lit = Math.max(0, Math.min(n, Math.round((pct / 100) * n)))
+      return '█'.repeat(lit) + '░'.repeat(n - lit)
+    }
+    const trace = (xs: number[]) => {
+      if (!terminal) return sparkline(xs)
+      const bars = '▁▂▃▄▅▆▇█'
+      const peak = Math.max(1, ...xs)
+      return xs.map(x => bars[Math.min(7, Math.round((x / peak) * 7))] ?? '▁').join('')
+    }
+    const flat = (n: number) => (terminal ? '▁' : '⡀').repeat(n)
     const pulse = await read($, spark)
     const { Box, Button, Text } = $.ui.resolve(e)
 
@@ -228,16 +242,16 @@ export const register: Register = on => {
       // a dim flat line holds its place until two steps have run
       ['  '],
       pulse.length > 1
-        ? [sparkline(pulse.slice(wide ? -12 : -6)), 'yellow']
-        : ['⡀'.repeat(wide ? 12 : 6), FLAT_COLOR],
+        ? [trace(pulse.slice(wide ? -12 : -6)), 'yellow']
+        : [flat(wide ? 12 : 6), FLAT_COLOR],
     ]
 
     const right = (wide: boolean): Group[] => [
       {
         key: 'hit',
         label: wide
-          ? [['⧉ ', busy ? hitColor : undefined], [`${cacheHit}% `, busy ? hitColor : undefined], [meter(cacheHit, 5), busy ? hitColor : undefined]]
-          : [['⧉', busy ? hitColor : undefined], [`${cacheHit}%`, busy ? hitColor : undefined]],
+          ? [['⧉ ', busy ? hitColor : undefined], [`${cacheHit}% `, busy ? hitColor : undefined], [gauge(cacheHit, 5), busy ? hitColor : undefined]]
+          : [[terminal ? '⧉ ' : '⧉', busy ? hitColor : undefined], [`${cacheHit}%`, busy ? hitColor : undefined]],
         detail: [
           ['Cached '], [fmtTok(s.cacheRead), 'green'], SEP,
           ['Written '], [fmtTok(s.cacheWrite), ACCENT_ORANGE], SEP,
@@ -249,8 +263,8 @@ export const register: Register = on => {
             {
               key: 'ctx',
               label: (wide
-                ? [['◔ ', busy ? ctxColor : undefined], [`${c.percent}% `, busy ? ctxColor : undefined], [meter(c.percent, 5), busy ? ctxColor : undefined]]
-                : [['◔', busy ? ctxColor : undefined], [`${c.percent}%`, busy ? ctxColor : undefined]]) as Seg[],
+                ? [['◔ ', busy ? ctxColor : undefined], [`${c.percent}% `, busy ? ctxColor : undefined], [gauge(c.percent, 5), busy ? ctxColor : undefined]]
+                : [[terminal ? '◔ ' : '◔', busy ? ctxColor : undefined], [`${c.percent}%`, busy ? ctxColor : undefined]]) as Seg[],
               detail: [
                 [fmtTok(c.tokens), ctxColor], [` / ${fmtTok(c.window)}`],
                 ...c.rows.slice(0, 1).flatMap((r): Seg[] => [SEP, [`${r.name} `], [fmtTok(r.tokens), 'blue']]),
@@ -288,10 +302,12 @@ export const register: Register = on => {
     const left = brand(fits)
     const groups = right(gauges)
     const fill = Math.max(2, avail ? avail - total(fits, gauges) + 2 : 4)
-    const terminal = e.surface === 'terminal'
+    // Terminals without true color round the soft darks to navy or gray: go clear there
+    const bandBg = terminal ? undefined : BAND_BG
+    const cardBg = terminal ? undefined : CARD_BG
 
     const sep = (
-      <Text key="sep" color="#45455c">
+      <Text key="sep" color={terminal ? 'gray' : '#45455c'}>
         {'│'}
       </Text>
     )
@@ -300,15 +316,15 @@ export const register: Register = on => {
     // The report: titled sections of label / value rows, wrapping when narrow
     type Row = [string, string, string?]
     const section = (key: string, title: string, accent: string, rows: Row[], extra?: ReturnType<typeof Text>) => (
-      <Box key={key} flexDirection="column" marginRight={3} flexShrink={1}>
+      <Box key={key} flexDirection="column" marginRight={terminal ? 2 : 3} flexShrink={1}>
         <Text color={tint(accent)} bold>
           {`▍${title}`}
         </Text>
         {extra ?? null}
         {rows.map(([label, value, color]) => (
           <Box key={label} flexDirection="row">
-            <Box width={13} flexShrink={0}>
-              <Text dimColor>{label}</Text>
+            <Box width={terminal ? 15 : 13} flexShrink={0}>
+              <Text dimColor wrap="truncate-end">{terminal ? label.slice(0, 13) : label}</Text>
             </Box>
             <Text color={tint(color ?? 'white')}>{value}</Text>
           </Box>
@@ -317,20 +333,20 @@ export const register: Register = on => {
     )
     const bar = (pct: number, color: string, note: string) => (
       <Text key="bar">
-        <Text color={tint(color)}>{meter(pct, 10)}</Text>
+        <Text color={tint(color)}>{gauge(pct, 10)}</Text>
         <Text color={tint(color)}>{`  ${note}`}</Text>
       </Text>
     )
 
     // Three columns of at most five lines, so the report fits without a scroll
     const report = pinned ? (
-      <Box key="report" flexDirection="row" backgroundColor={CARD_BG} paddingX={1} marginTop={1}>
+      <Box key="report" flexDirection="row" backgroundColor={cardBg} paddingX={1} marginTop={terminal ? 0 : 1}>
         {section('act', 'ACTIVITY', 'blue', [
           ['Turns/steps', `${s.turns}/${s.steps}`],
           ['Output', `${tps} tok/s`, 'cyan'],
           ['TTFT', `${ttft}s`, 'yellow'],
           ['LLM/tools', `${fmtDur(s.llmMs)}/${fmtDur(s.toolMs)}`, 'blue'],
-          pulse.length > 1 ? ['Pulse', sparkline(pulse.slice(-10)), 'yellow'] : ['Pulse', '⡀'.repeat(10), FLAT_COLOR],
+          pulse.length > 1 ? ['Pulse', trace(pulse.slice(-10)), 'yellow'] : ['Pulse', flat(10), FLAT_COLOR],
         ])}
         {section(
           'tok',
@@ -360,7 +376,7 @@ export const register: Register = on => {
     const dot = pinned ? '▼' : '▶'
 
     return (
-      <Box flexDirection="column" backgroundColor={BAND_BG} paddingX={1}>
+      <Box flexDirection="column" backgroundColor={bandBg} paddingX={1}>
         <Box key="bar" flexDirection="row" flexWrap="wrap">
           <Box key="open" flexGrow={1} flexDirection="row">
             <Box key="dot" flexShrink={0}>
@@ -383,7 +399,8 @@ export const register: Register = on => {
                 right={0}
                 display="none"
                 hover={{ display: 'flex' }}
-                backgroundColor={CARD_BG}
+                // The hover card still needs a fill to hide the row under it
+                backgroundColor={terminal ? 'black' : CARD_BG}
                 paddingX={1}
                 // Wide enough for the whole card: one line, never wrapped
                 // The desktop's proportional font and emoji run wider than cells: give it room
@@ -395,6 +412,12 @@ export const register: Register = on => {
             </Box>
           ))}
         </Box>
+        {report && terminal ? (
+          // A thin rule sets the report apart where there is no card fill
+          <Text key="rule" color="gray">
+            {'─'.repeat(Math.max(20, (avail || 80) - 2))}
+          </Text>
+        ) : null}
         {report}
         {!pinned && terminal ? (
           // The terminal paints the hover card into this row; the desktop floats it

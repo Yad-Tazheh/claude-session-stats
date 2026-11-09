@@ -21,6 +21,8 @@ Hover a stat for a one-line detail popup. The report shows three columns:
 
 On a narrow panel the gauges and the long pulse go first, so nothing is cut off.
 
+In a terminal the bar drops its background fills (many terminals lack true color) and uses solid blocks for the pulse and gauges.
+
 `/statsbar show` or `/statsbar hide` sets the bar; `/statsbar` alone toggles it.
 
 ## Install
