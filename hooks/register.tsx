@@ -37,8 +37,8 @@ const NOCTALIA: Record<string, string> = {
 }
 const tint = (color: string) => NOCTALIA[color] ?? color
 // Near the app's own frame gray, a touch of Noctalia indigo: the band, and its cards
-const BAND_BG = '#22222c'
-const CARD_BG = '#15151d'
+const BAND_BG = '#232323'
+const CARD_BG = '#161616'
 // The prompt-in count, in the bar and the report
 const IN_COLOR = '#FF00FF'
 // The report button: a toned-down purple
