@@ -63,6 +63,16 @@ const meter = (pct: number, n: number) => {
   return '▰'.repeat(on) + '▱'.repeat(n - on)
 }
 
+// The pulse takes the main model's color: Opus yellow, Fable orange,
+// Haiku green, Sonnet magenta
+const pulseColor = (model: string) => {
+  const m = model.toLowerCase()
+  if (m.includes('fable')) return '#FF9A1F'
+  if (m.includes('haiku')) return '#22E55A'
+  if (m.includes('sonnet')) return '#FF00FF'
+  return '#FFE81A'
+}
+
 // The pulse before it has data: a dim flat line
 const FLAT_COLOR = '#5a5a72'
 
@@ -173,6 +183,7 @@ export const register: Register = on => {
     if (s.steps === 0 && !c) return next(e)
     const pinned = await read($, isPinned)
     const busy = await read($, isBusy)
+    const beat = pulseColor(await $.session.model().catch(() => ''))
     // The terminal gets solid blocks: braille and thin bars read as loose dots there
     const terminal = e.surface === 'terminal'
     const gauge = (pct: number, n: number) => {
@@ -230,7 +241,7 @@ export const register: Register = on => {
       )
 
     // The left side: mark, state, counts and the pulse; one pressable with the gap
-    const state: Seg[] = busy ? [['◉ ', 'yellow'], ['live', 'yellow']] : [['○ '], ['standby']]
+    const state: Seg[] = busy ? [['◉ ', beat], ['live', beat]] : [['○ '], ['standby']]
     const brand = (wide: boolean): Seg[] => [
       [' '],
       ...state,
@@ -242,7 +253,7 @@ export const register: Register = on => {
       // a dim flat line holds its place until two steps have run
       ['  '],
       pulse.length > 1
-        ? [trace(pulse.slice(wide ? -12 : -6)), 'yellow']
+        ? [trace(pulse.slice(wide ? -12 : -6)), beat]
         : [flat(wide ? 12 : 6), FLAT_COLOR],
     ]
 
@@ -346,7 +357,7 @@ export const register: Register = on => {
           ['Output', `${tps} tok/s`, 'cyan'],
           ['TTFT', `${ttft}s`, 'yellow'],
           ['LLM/tools', `${fmtDur(s.llmMs)}/${fmtDur(s.toolMs)}`, 'blue'],
-          pulse.length > 1 ? ['Pulse', trace(pulse.slice(-10)), 'yellow'] : ['Pulse', flat(10), FLAT_COLOR],
+          pulse.length > 1 ? ['Pulse', trace(pulse.slice(-10)), beat] : ['Pulse', flat(10), FLAT_COLOR],
         ])}
         {section(
           'tok',
