@@ -262,6 +262,16 @@ export const register: Register = on => {
           : [terminal ? '░' : '▱', FLAT_COLOR],
       )
     }
+    // A percent gauge shaded like the pulse: lit cells fade in toward the tip
+    const fade = (pct: number, n: number, color: string): Seg[] => {
+      const hex = tint(color)
+      const lit = Math.max(0, Math.min(n, Math.round((pct / 100) * n)))
+      return Array.from({ length: n }, (_, k): Seg =>
+        k < lit
+          ? [terminal ? '█' : '▰', shade(hex, lit === 1 ? 1 : 0.3 + (0.7 * k) / (lit - 1))]
+          : [terminal ? '░' : '▱', FLAT_COLOR],
+      )
+    }
     const brand = (wide: boolean): Seg[] => [
       [' '],
       ...state,
@@ -278,7 +288,7 @@ export const register: Register = on => {
       {
         key: 'hit',
         label: wide
-          ? [['⧉ ', busy ? tokTone : undefined], [`${cacheHit}% `, busy ? tokTone : undefined], [gauge(cacheHit, 5), busy ? tokTone : undefined]]
+          ? [['⧉ ', busy ? tokTone : undefined], [`${cacheHit}% `, busy ? tokTone : undefined], ...fade(cacheHit, 5, tokTone)]
           : [[terminal ? '⧉ ' : '⧉', busy ? tokTone : undefined], [`${cacheHit}%`, busy ? tokTone : undefined]],
         detail: [
           ['Cached '], [fmtTok(s.cacheRead), 'green'], SEP,
@@ -360,9 +370,9 @@ export const register: Register = on => {
         ))}
       </Box>
     )
-    const bar = (pct: number, color: string, note: string) => (
+    const bar = (pct: number, color: string, note: string, shaded = false) => (
       <Text key="bar">
-        <Text color={tint(color)}>{gauge(pct, 10)}</Text>
+        {shaded ? draw(fade(pct, 10, color)) : <Text color={tint(color)}>{gauge(pct, 10)}</Text>}
         <Text color={tint(color)}>{`  ${note}`}</Text>
       </Text>
     )
@@ -399,7 +409,7 @@ export const register: Register = on => {
             ['Cached', fmtTok(s.cacheRead), 'green'],
             ['Write/new', `${fmtTok(s.cacheWrite)}/${fmtTok(s.input)}`, ACCENT_ORANGE],
           ],
-          bar(cacheHit, tokTone, `${cacheHit}% hit`),
+          bar(cacheHit, tokTone, `${cacheHit}% hit`, true),
         )}
         {c
           ? section(
