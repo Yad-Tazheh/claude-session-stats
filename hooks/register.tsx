@@ -46,6 +46,9 @@ const DOT_COLOR = '#9580D6'
 // The output count; and a peach for write/new and the fourth context row
 const OUT_COLOR = '#03EFFC'
 const ACCENT_ORANGE = '#FFB38A'
+// Fixed grays instead of the theme's dim and gray, so every install draws the same
+const MUTED = '#8C8C8C'
+const RULE = '#6B6B6B'
 
 const fmtTok = (n: number) =>
   n >= 1e6 ? `${(n / 1e6).toFixed(1)}M` : n >= 1e3 ? `${(n / 1e3).toFixed(1)}k` : `${n}`
@@ -227,7 +230,7 @@ export const register: Register = on => {
             {text}
           </Text>
         ) : (
-          <Text key={`${i}`} dimColor>
+          <Text key={`${i}`} color={MUTED}>
             {text}
           </Text>
         ),
@@ -318,7 +321,7 @@ export const register: Register = on => {
     const cardBg = terminal ? undefined : CARD_BG
 
     const sep = (
-      <Text key="sep" color={terminal ? 'gray' : '#45455c'}>
+      <Text key="sep" color={terminal ? RULE : '#45455c'}>
         {'│'}
       </Text>
     )
@@ -335,7 +338,7 @@ export const register: Register = on => {
         {rows.map(([label, value, color]) => (
           <Box key={label} flexDirection="row">
             <Box width={terminal ? 15 : 13} flexShrink={0}>
-              <Text dimColor wrap="truncate-end">{terminal ? label.slice(0, 13) : label}</Text>
+              <Text color={MUTED} wrap="truncate-end">{terminal ? label.slice(0, 13) : label}</Text>
             </Box>
             <Text color={tint(color ?? 'white')}>{value}</Text>
           </Box>
@@ -423,7 +426,7 @@ export const register: Register = on => {
                 display="none"
                 hover={{ display: 'flex' }}
                 // The hover card still needs a fill to hide the row under it
-                backgroundColor={terminal ? 'black' : CARD_BG}
+                backgroundColor={terminal ? '#161616' : CARD_BG}
                 paddingX={1}
                 // Wide enough for the whole card: one line, never wrapped
                 // The desktop's proportional font and emoji run wider than cells: give it room
@@ -437,7 +440,7 @@ export const register: Register = on => {
         </Box>
         {report && terminal ? (
           // A thin rule sets the report apart where there is no card fill
-          <Text key="rule" color="gray">
+          <Text key="rule" color={RULE}>
             {'─'.repeat(Math.max(20, (avail || 80) - 2))}
           </Text>
         ) : null}
