@@ -83,13 +83,6 @@ const shade = (hex: string, k: number) => {
 // The pulse before it has data: a dim flat line
 const FLAT_COLOR = '#5a5a72'
 
-// A braille sparkline scaled to its own peak: dots fill as the rate climbs
-const sparkline = (xs: number[]) => {
-  const bars = '⡀⣀⣄⣤⣦⣶⣷⣿'
-  const peak = Math.max(1, ...xs)
-  return xs.map(x => bars[Math.min(7, Math.round((x / peak) * 7))] ?? '▁').join('')
-}
-
 async function refreshContext($: EngineInterface) {
   const { context: c } = await $.session.usage({ breakdown: 'summary' })
   const rows = (c.breakdown?.categories ?? [])
@@ -198,13 +191,6 @@ export const register: Register = on => {
       const lit = Math.max(0, Math.min(n, Math.round((pct / 100) * n)))
       return '█'.repeat(lit) + '░'.repeat(n - lit)
     }
-    const trace = (xs: number[]) => {
-      if (!terminal) return sparkline(xs)
-      const bars = '▁▂▃▄▅▆▇█'
-      const peak = Math.max(1, ...xs)
-      return xs.map(x => bars[Math.min(7, Math.round((x / peak) * 7))] ?? '▁').join('')
-    }
-    const flat = (n: number) => (terminal ? '▁' : '⡀').repeat(n)
     const pulse = await read($, spark)
     const { Box, Button, Text } = $.ui.resolve(e)
 
@@ -249,6 +235,16 @@ export const register: Register = on => {
 
     // The left side: mark, state, counts and the pulse; one pressable with the gap
     const state: Seg[] = busy ? [['◉ ', beat], ['live', beat]] : [['○ '], ['standby']]
+    // A glow gauge: filled to the latest speed against the peak, fading in toward the tip
+    const glow = (n: number): Seg[] => {
+      const last = pulse[pulse.length - 1] ?? 0
+      const lit = pulse.length > 1 ? Math.max(1, Math.round((last / Math.max(1, ...pulse)) * n)) : 0
+      return Array.from({ length: n }, (_, k): Seg =>
+        k < lit
+          ? [terminal ? '█' : '▰', shade(beat, lit === 1 ? 1 : 0.3 + (0.7 * k) / (lit - 1))]
+          : [terminal ? '░' : '▱', FLAT_COLOR],
+      )
+    }
     const brand = (wide: boolean): Seg[] => [
       [' '],
       ...state,
@@ -256,12 +252,9 @@ export const register: Register = on => {
       [`${s.turns}`, 'white'],
       ['/'],
       [`${s.steps}`, 'white'],
-      // The pulse stays in both forms: the last 12 steps, or 6 when narrow;
-      // a dim flat line holds its place until two steps have run
+      // The pulse as the report's glow gauge: 10 segments, or 5 when narrow
       ['  '],
-      pulse.length > 1
-        ? [trace(pulse.slice(wide ? -12 : -6)), beat]
-        : [flat(wide ? 12 : 6), FLAT_COLOR],
+      ...glow(wide ? 10 : 5),
     ]
 
     const right = (wide: boolean): Group[] => [
@@ -370,21 +363,9 @@ export const register: Register = on => {
             ['LLM/tools', `${fmtDur(s.llmMs)}/${fmtDur(s.toolMs)}`, 'blue'],
           ],
           // The pulse heads the column, as the gauges head the other two, so the rows line up
-          // A glow gauge, the gauges' shape: filled to the latest speed against the peak, fading in toward the tip
+          // The same glow gauge as the bar, at the gauges' width
           <Text key="bar">
-            {Array.from({ length: 10 }, (_, k) => {
-              const last = pulse[pulse.length - 1] ?? 0
-              const lit = pulse.length > 1 ? Math.max(1, Math.round((last / Math.max(1, ...pulse)) * 10)) : 0
-              return k < lit ? (
-                <Text key={`g${k}`} color={shade(beat, lit === 1 ? 1 : 0.3 + (0.7 * k) / (lit - 1))}>
-                  {terminal ? '█' : '▰'}
-                </Text>
-              ) : (
-                <Text key={`g${k}`} color={FLAT_COLOR}>
-                  {terminal ? '░' : '▱'}
-                </Text>
-              )
-            })}
+            {draw(glow(10))}
             <Text color={pulse.length > 1 ? beat : FLAT_COLOR}>
               {pulse.length > 1 ? `  ${Math.round(pulse[pulse.length - 1] ?? 0)} tok/s` : '  pulse'}
             </Text>
