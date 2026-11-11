@@ -13,7 +13,7 @@ A Claude Code mod that shows a one-row stats bar above the prompt, on a soft dar
 - **⧉ cache hit** and **◔ context used**: colored with gauges while live, gray percents alone on standby.
 - **↑ in / ↓ out** tokens, and **⏱** active time (LLM + tools).
 
-Hover a stat for a one-line detail popup. The report shows three columns:
+Hover a stat for a one-line detail popup. The report shows three columns, each in one tone (activity in the model color, tokens sky blue, context mint; red when the cache misses or the context runs full), with calm gray numbers:
 
 - **ACTIVITY**: a glow gauge of the latest speed against the peak, then turns/steps, output tok/s, time to first token, LLM/tool time
 - **TOKENS**: cache-hit gauge, in, out, cached, cache write / uncached

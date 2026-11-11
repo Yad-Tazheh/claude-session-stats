@@ -48,6 +48,10 @@ const OUT_COLOR = '#03EFFC'
 const ACCENT_ORANGE = '#FFB38A'
 // Fixed grays instead of the theme's dim and gray, so every install draws the same
 const MUTED = '#8C8C8C'
+// The report's gauges, set to sit beside the yellow pulse: a sky blue and a mint green;
+// they still turn red when the cache misses or the context runs full
+const TOK_BAR = '#5AB4FF'
+const CTX_BAR = '#5FE3A1'
 const RULE = '#6B6B6B'
 
 const fmtTok = (n: number) =>
@@ -74,6 +78,13 @@ const pulseColor = (model: string) => {
   if (m.includes('haiku')) return '#22E55A'
   if (m.includes('sonnet')) return '#FF00FF'
   return '#FFE81A'
+}
+
+// A soft light gray carrying a hint of a color: easy on the eye for rows of numbers
+const calm = (hex: string) => {
+  if (!/^#[0-9a-f]{6}$/i.test(hex)) return '#D0D0D0'
+  const c = (o: number) => parseInt(hex.slice(o, o + 2), 16)
+  return `#${[1, 3, 5].map(o => Math.round(0xc8 + (c(o) - 0xc8) * 0.3).toString(16).padStart(2, '0')).join('')}`
 }
 
 // A hex color blended toward the band's gray: 1 is the color, 0 the gray
@@ -205,6 +216,9 @@ export const register: Register = on => {
     const hitColor = cacheHit >= 80 ? 'green' : cacheHit >= 50 ? 'yellow' : 'red'
     const ctxPct = c?.percent ?? 0
     const ctxColor = ctxPct < 50 ? 'green' : ctxPct < 80 ? 'yellow' : 'red'
+    // TOKENS and CONTEXT each keep one tone, in the bar and the report: red when bad
+    const tokTone = hitColor === 'red' ? 'red' : TOK_BAR
+    const ctxTone = ctxColor === 'red' ? 'red' : CTX_BAR
 
     // A segment is [text, color]; no color draws it dim
     type Seg = [string, string?]
@@ -264,8 +278,8 @@ export const register: Register = on => {
       {
         key: 'hit',
         label: wide
-          ? [['⧉ ', busy ? hitColor : undefined], [`${cacheHit}% `, busy ? hitColor : undefined], [gauge(cacheHit, 5), busy ? hitColor : undefined]]
-          : [[terminal ? '⧉ ' : '⧉', busy ? hitColor : undefined], [`${cacheHit}%`, busy ? hitColor : undefined]],
+          ? [['⧉ ', busy ? tokTone : undefined], [`${cacheHit}% `, busy ? tokTone : undefined], [gauge(cacheHit, 5), busy ? tokTone : undefined]]
+          : [[terminal ? '⧉ ' : '⧉', busy ? tokTone : undefined], [`${cacheHit}%`, busy ? tokTone : undefined]],
         detail: [
           ['Cached '], [fmtTok(s.cacheRead), 'green'], SEP,
           ['Written '], [fmtTok(s.cacheWrite), ACCENT_ORANGE], SEP,
@@ -277,8 +291,8 @@ export const register: Register = on => {
             {
               key: 'ctx',
               label: (wide
-                ? [['◔ ', busy ? ctxColor : undefined], [`${c.percent}% `, busy ? ctxColor : undefined], [gauge(c.percent, 5), busy ? ctxColor : undefined]]
-                : [[terminal ? '◔ ' : '◔', busy ? ctxColor : undefined], [`${c.percent}%`, busy ? ctxColor : undefined]]) as Seg[],
+                ? [['◔ ', busy ? ctxTone : undefined], [`${c.percent}% `, busy ? ctxTone : undefined], [gauge(c.percent, 5), busy ? ctxTone : undefined]]
+                : [[terminal ? '◔ ' : '◔', busy ? ctxTone : undefined], [`${c.percent}%`, busy ? ctxTone : undefined]]) as Seg[],
               detail: [
                 [fmtTok(c.tokens), ctxColor], [` / ${fmtTok(c.window)}`],
                 ...c.rows.slice(0, 1).flatMap((r): Seg[] => [SEP, [`${r.name} `], [fmtTok(r.tokens), 'blue']]),
@@ -340,7 +354,8 @@ export const register: Register = on => {
             <Box width={terminal ? 15 : 13} flexShrink={0}>
               <Text color={MUTED} wrap="truncate-end">{terminal ? label.slice(0, 13) : label}</Text>
             </Box>
-            <Text color={tint(color ?? 'white')}>{value}</Text>
+            {/* Values stay calm: a light gray with a hint of the column's tone */}
+            <Text color={calm(tint(accent))}>{value}</Text>
           </Box>
         ))}
       </Box>
@@ -358,7 +373,7 @@ export const register: Register = on => {
         {section(
           'act',
           'ACTIVITY',
-          'blue',
+          beat,
           [
             ['Turns/steps', `${s.turns}/${s.steps}`],
             ['Output', `${tps} tok/s`, 'cyan'],
@@ -377,22 +392,22 @@ export const register: Register = on => {
         {section(
           'tok',
           'TOKENS',
-          hitColor,
+          tokTone,
           [
             ['In', fmtTok(promptIn), IN_COLOR],
             ['Out', fmtTok(s.output), OUT_COLOR],
             ['Cached', fmtTok(s.cacheRead), 'green'],
             ['Write/new', `${fmtTok(s.cacheWrite)}/${fmtTok(s.input)}`, ACCENT_ORANGE],
           ],
-          bar(cacheHit, hitColor, `${cacheHit}% hit`),
+          bar(cacheHit, tokTone, `${cacheHit}% hit`),
         )}
         {c
           ? section(
               'ctx',
               'CONTEXT',
-              ctxColor,
+              ctxTone,
               c.rows.slice(0, 4).map((r, i): Row => [r.name, fmtTok(r.tokens), ['blue', 'magenta', 'cyan', ACCENT_ORANGE][i]]),
-              bar(c.percent, ctxColor, `${c.percent}% of ${fmtTok(c.window)}`),
+              bar(c.percent, ctxTone, `${c.percent}% of ${fmtTok(c.window)}`),
             )
           : null}
       </Box>
