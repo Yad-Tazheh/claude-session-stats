@@ -252,9 +252,9 @@ export const register: Register = on => {
       [`${s.turns}`, 'white'],
       ['/'],
       [`${s.steps}`, 'white'],
-      // The pulse as the report's glow gauge: 10 segments, or 5 when narrow
+      // The pulse as the report's glow gauge, shorter: 5 segments, or 3 when narrow
       ['  '],
-      ...glow(wide ? 10 : 5),
+      ...glow(wide ? 5 : 3),
     ]
 
     const right = (wide: boolean): Group[] => [
