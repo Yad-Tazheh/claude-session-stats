@@ -15,7 +15,7 @@ A Claude Code mod that shows a one-row stats bar above the prompt, on a soft dar
 
 Hover a stat for a one-line detail popup. The report shows three columns:
 
-- **ACTIVITY**: turns/steps, output tok/s, time to first token, LLM/tool time, pulse
+- **ACTIVITY**: a glow gauge of the latest speed against the peak, then turns/steps, output tok/s, time to first token, LLM/tool time
 - **TOKENS**: cache-hit gauge, in, out, cached, cache write / uncached
 - **CONTEXT**: context gauge and the largest categories (messages, tools, system prompt, ...)
 

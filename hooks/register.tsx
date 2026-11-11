@@ -73,6 +73,13 @@ const pulseColor = (model: string) => {
   return '#FFE81A'
 }
 
+// A hex color blended toward the band's gray: 1 is the color, 0 the gray
+const shade = (hex: string, k: number) => {
+  const c = (h: string, o: number) => parseInt(h.slice(o, o + 2), 16)
+  const mix = (o: number) => Math.round(0x23 + (c(hex, o) - 0x23) * Math.max(0, Math.min(1, k)))
+  return `#${[1, 3, 5].map(o => mix(o).toString(16).padStart(2, '0')).join('')}`
+}
+
 // The pulse before it has data: a dim flat line
 const FLAT_COLOR = '#5a5a72'
 
@@ -352,13 +359,37 @@ export const register: Register = on => {
     // Three columns of at most five lines, so the report fits without a scroll
     const report = pinned ? (
       <Box key="report" flexDirection="row" backgroundColor={cardBg} paddingX={1} marginTop={terminal ? 0 : 1}>
-        {section('act', 'ACTIVITY', 'blue', [
-          ['Turns/steps', `${s.turns}/${s.steps}`],
-          ['Output', `${tps} tok/s`, 'cyan'],
-          ['TTFT', `${ttft}s`, 'yellow'],
-          ['LLM/tools', `${fmtDur(s.llmMs)}/${fmtDur(s.toolMs)}`, 'blue'],
-          pulse.length > 1 ? ['Pulse', trace(pulse.slice(-10)), beat] : ['Pulse', flat(10), FLAT_COLOR],
-        ])}
+        {section(
+          'act',
+          'ACTIVITY',
+          'blue',
+          [
+            ['Turns/steps', `${s.turns}/${s.steps}`],
+            ['Output', `${tps} tok/s`, 'cyan'],
+            ['TTFT', `${ttft}s`, 'yellow'],
+            ['LLM/tools', `${fmtDur(s.llmMs)}/${fmtDur(s.toolMs)}`, 'blue'],
+          ],
+          // The pulse heads the column, as the gauges head the other two, so the rows line up
+          // A glow gauge, the gauges' shape: filled to the latest speed against the peak, fading in toward the tip
+          <Text key="bar">
+            {Array.from({ length: 10 }, (_, k) => {
+              const last = pulse[pulse.length - 1] ?? 0
+              const lit = pulse.length > 1 ? Math.max(1, Math.round((last / Math.max(1, ...pulse)) * 10)) : 0
+              return k < lit ? (
+                <Text key={`g${k}`} color={shade(beat, lit === 1 ? 1 : 0.3 + (0.7 * k) / (lit - 1))}>
+                  {terminal ? '█' : '▰'}
+                </Text>
+              ) : (
+                <Text key={`g${k}`} color={FLAT_COLOR}>
+                  {terminal ? '░' : '▱'}
+                </Text>
+              )
+            })}
+            <Text color={pulse.length > 1 ? beat : FLAT_COLOR}>
+              {pulse.length > 1 ? `  ${Math.round(pulse[pulse.length - 1] ?? 0)} tok/s` : '  pulse'}
+            </Text>
+          </Text>,
+        )}
         {section(
           'tok',
           'TOKENS',
